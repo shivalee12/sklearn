@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from sklearn import metrics, svm
 from sklearn.model_selection import train_test_split
 import pdb
+from sklearn.model_selection import GridSearchCV
+
 
 def preprocess_data(data):
     n_samples = len(data)
@@ -80,3 +82,32 @@ def predict_and_eval(model, X_test, y_test):
         "Classification report rebuilt from confusion matrix:\n"
         f"{metrics.classification_report(y_true, y_pred)}\n"
     )
+
+
+def hyperparameter_tuning(X_train, y_train, X_dev, y_dev, gamma_ranges, C_ranges):
+    # Define a list of hyperparameter combinations
+    param_combinations = [{'gamma': cur_gamma, 'C': cur_C} for cur_gamma in gamma_ranges for cur_C in C_ranges]
+
+    best_acc_so_far = -1
+    best_model = None
+    optimal_gamma = None
+    optimal_C = None
+
+    for params in param_combinations:
+        # Train model with the current hyperparameters
+        cur_model = train_model(X_train, y_train, params)
+        
+        # Get accuracy on the dev set
+        cur_accuracy = predict_and_eval(cur_model, X_dev, y_dev)
+        
+        # Check if the current model performs better than the previous best
+        if cur_accuracy > best_acc_so_far:
+            print("New best accuracy:", cur_accuracy)
+            best_acc_so_far = cur_accuracy
+            optimal_gamma = params['gamma']
+            optimal_C = params['C']
+            best_model = cur_model
+
+    print("Optimal parameters gamma:", optimal_gamma, "C:", optimal_C)
+    
+    return best_model, optimal_gamma, optimal_C
