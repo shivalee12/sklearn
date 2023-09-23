@@ -90,8 +90,12 @@ total_samples = len(X_train) + len(X_test) + len(X_dev)
 print(
     f"The number of total samples in the dataset (train + test + dev): {total_samples}"
 )
+# print(X_train.shape)
+# Get the shape of the first image in the dataset
+first_image_shape = digits.images[0].shape
 
-image_height, image_width = X_train.shape[1], X_train.shape[2]
+# Extract height and width from the shape
+image_height, image_width = first_image_shape
 print(
     f"Size (height and width) of the images in dataset: Height={image_height}, Width={image_width}"
 )
