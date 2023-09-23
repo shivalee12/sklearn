@@ -24,6 +24,8 @@ from utils import (
     predict_and_eval,
     hyperparameter_tuning,
 )
+from skimage.transform import resize
+from sklearn.metrics import accuracy_score
 
 
 digits = datasets.load_digits()
@@ -62,29 +64,69 @@ C_ranges = [0.1, 1, 2, 5, 10]
 test_sizes = [0.1, 0.2, 0.3]
 dev_sizes = [0.1, 0.2, 0.3]
 
-for test_size in test_sizes:
-    for dev_size in dev_sizes:
-        train_size = 1 - test_size - dev_size
-        X_train, X_test, X_dev, y_train, y_test, y_dev = split_data(
-            digits.data, digits.target, test_size, dev_size, random_state=1
-        )
-        # print("X_train shape:", X_train.shape)
-        # print("y_train shape:", y_train.shape)
-        # print("X_dev shape:", X_dev.shape)
-        # print("y_dev shape:", y_dev.shape)
-        best_model, optimal_gamma, optimal_C = hyperparameter_tuning(
-            X_train, y_train, X_dev, y_dev, gamma_ranges, C_ranges
-        )
+# for test_size in test_sizes:
+#     for dev_size in dev_sizes:
+#         train_size = 1 - test_size - dev_size
+#         X_train, X_test, X_dev, y_train, y_test, y_dev = split_data(
+#             digits.data, digits.target, test_size, dev_size, random_state=1
+#         )
+#         # print("X_train shape:", X_train.shape)
+#         # print("y_train shape:", y_train.shape)
+#         # print("X_dev shape:", X_dev.shape)
+#         # print("y_dev shape:", y_dev.shape)
+#         best_model, optimal_gamma, optimal_C = hyperparameter_tuning(
+#             X_train, y_train, X_dev, y_dev, gamma_ranges, C_ranges
+#         )
 
-        train_acc = predict_and_eval(best_model, X_train, y_train)
-        dev_acc = predict_and_eval(best_model, X_dev, y_dev)
-        test_acc = predict_and_eval(best_model, X_test, y_test)
+#         train_acc = predict_and_eval(best_model, X_train, y_train)
+#         dev_acc = predict_and_eval(best_model, X_dev, y_dev)
+#         test_acc = predict_and_eval(best_model, X_test, y_test)
 
-        print(
-            f"test_size={test_size} dev_size={dev_size} train_size={train_size} train_acc={train_acc} dev_acc={dev_acc} test_acc={test_acc}"
-        )
-        # print(f"Best Hyperparameters: {best_hparams}\n")
+#         print(
+#             f"test_size={test_size} dev_size={dev_size} train_size={train_size} train_acc={train_acc} dev_acc={dev_acc} test_acc={test_acc}"
+#         )
+#         # print(f"Best Hyperparameters: {best_hparams}\n")
 
+# Define the image sizes to evaluate
+image_sizes = [4, 6, 8]
+for size in image_sizes:
+    print(f"Image size: {size}x{size}")
+
+    # Resize the images to the specified size
+    X_train_resized = [resize(image, (size, size)) for image in X_train]
+    X_dev_resized = [resize(image, (size, size)) for image in X_dev]
+    X_test_resized = [resize(image, (size, size)) for image in X_test]
+
+    # Hyperparameter tuning
+    gamma_ranges = [0.001, 0.01, 0.1, 1, 10, 100]
+    C_ranges = [0.1, 1, 2, 5, 10]
+
+    best_model, optimal_gamma, optimal_C = hyperparameter_tuning(
+        X_train_resized, y_train, X_dev_resized, y_dev, gamma_ranges, C_ranges
+    )
+
+    # Train the model with the best hyperparameters
+    model = train_model(
+        X_train_resized,
+        y_train,
+        {"gamma": optimal_gamma, "C": optimal_C},
+        model_type="svm",
+    )
+
+    # Evaluate the model on train, dev, and test sets
+    train_predictions = predict_and_eval(model, X_train_resized, y_train)
+    dev_predictions = predict_and_eval(model, X_dev_resized, y_dev)
+    test_predictions = predict_and_eval(model, X_test_resized, y_test)
+
+    # Calculate accuracy for each set
+    train_acc = accuracy_score(y_train, train_predictions)
+    dev_acc = accuracy_score(y_dev, dev_predictions)
+    test_acc = accuracy_score(y_test, test_predictions)
+
+    # Print the results
+    print(
+        f"Image size: {size}x{size} train_size: 0.7 dev_size: 0.1 test_size: 0.2 Train accuracy: {train_acc:.2f} dev_acc: {dev_acc:.2f} test_acc: {test_acc:.2f}"
+    )
 
 total_samples = len(X_train) + len(X_test) + len(X_dev)
 print(
