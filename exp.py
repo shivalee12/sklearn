@@ -84,3 +84,18 @@ for test_size in test_sizes:
             f"test_size={test_size} dev_size={dev_size} train_size={train_size} train_acc={train_acc} dev_acc={dev_acc} test_acc={test_acc}"
         )
         # print(f"Best Hyperparameters: {best_hparams}\n")
+
+
+total_samples = len(X_train) + len(X_test) + len(X_dev)
+print(
+    f"The number of total samples in the dataset (train + test + dev): {total_samples}"
+)
+# print(X_train.shape)
+# Get the shape of the first image in the dataset
+first_image_shape = digits.images[0].shape
+
+# Extract height and width from the shape
+image_height, image_width = first_image_shape
+print(
+    f"Size (height and width) of the images in dataset: Height={image_height}, Width={image_width}"
+)
