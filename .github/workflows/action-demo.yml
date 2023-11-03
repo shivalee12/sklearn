@@ -21,6 +21,6 @@ jobs:
       - name: Install dep
         run:  pip3 install --no-cache-dir -r requirements.txt
       - name: Building Docker Image and running container
-        run: ./docker_run.sh 
+        run:  docker_run.sh 
       - name: New step
         run: echo "🚀 This is a new step in the workflow."
