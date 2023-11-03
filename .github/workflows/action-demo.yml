@@ -21,6 +21,6 @@ jobs:
       - name: Install dep
         run:  pip3 install --no-cache-dir -r requirements.txt
       - name: Run experiment
-        run: python quiz2.py
+        run: python exp.py
       - name: New step
         run: echo "🚀 This is a new step in the workflow."
