@@ -20,7 +20,7 @@ jobs:
       - run: echo "🍏 This job's status is ${{ job.status }}."
       - name: Install dep
         run:  pip3 install --no-cache-dir -r requirements.txt
-      - name: Run experiment
-        run: python exp.py
+      - name: Building Docker Image and running container
+        run: ./docker_run.sh 
       - name: New step
         run: echo "🚀 This is a new step in the workflow."
