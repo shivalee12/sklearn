@@ -89,7 +89,7 @@ def predict_and_eval(model, X_test, y_test):
     #     "Classification report rebuilt from confusion matrix:\n"
     #     f"{metrics.classification_report(y_true, y_pred)}\n"
     # )
-    return metrics.accuracy_score(y_test, predicted)
+    return predicted  # metrics.accuracy_score(y_test, predicted)
 
 
 def hyperparameter_tuning(X_train, y_train, X_dev, y_dev, gamma_ranges, C_ranges):

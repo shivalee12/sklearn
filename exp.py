@@ -49,7 +49,7 @@ X_test = preprocess_data(X_test)
 model = train_model(X_train, y_train, {"gamma": 0.001}, model_type="svm")
 
 # Call the predict_and_eval function
-predict_and_eval(model, X_test, y_test)
+print(predict_and_eval(model, X_test, y_test))
 
 # Show the plots
 plt.show()
@@ -57,45 +57,45 @@ plt.savefig("confusion_matrix.png")
 
 # hyperparameter tuning
 
-gamma_ranges = [0.001, 0.01, 0.1, 1, 10, 100]
-C_ranges = [0.1, 1, 2, 5, 10]
-test_sizes = [0.1, 0.2, 0.3]
-dev_sizes = [0.1, 0.2, 0.3]
+# gamma_ranges = [0.001, 0.01, 0.1, 1, 10, 100]
+# C_ranges = [0.1, 1, 2, 5, 10]
+# test_sizes = [0.1, 0.2, 0.3]
+# dev_sizes = [0.1, 0.2, 0.3]
 
-for test_size in test_sizes:
-    for dev_size in dev_sizes:
-        train_size = 1 - test_size - dev_size
-        X_train, X_test, X_dev, y_train, y_test, y_dev = split_data(
-            digits.data, digits.target, test_size, dev_size, random_state=1
-        )
-        # print("X_train shape:", X_train.shape)
-        # print("y_train shape:", y_train.shape)
-        # print("X_dev shape:", X_dev.shape)
-        # print("y_dev shape:", y_dev.shape)
-        best_model, optimal_gamma, optimal_C = hyperparameter_tuning(
-            X_train, y_train, X_dev, y_dev, gamma_ranges, C_ranges
-        )
+# for test_size in test_sizes:
+#     for dev_size in dev_sizes:
+#         train_size = 1 - test_size - dev_size
+#         X_train, X_test, X_dev, y_train, y_test, y_dev = split_data(
+#             digits.data, digits.target, test_size, dev_size, random_state=1
+#         )
+#         # print("X_train shape:", X_train.shape)
+#         # print("y_train shape:", y_train.shape)
+#         # print("X_dev shape:", X_dev.shape)
+#         # print("y_dev shape:", y_dev.shape)
+#         best_model, optimal_gamma, optimal_C = hyperparameter_tuning(
+#             X_train, y_train, X_dev, y_dev, gamma_ranges, C_ranges
+#         )
 
-        train_acc = predict_and_eval(best_model, X_train, y_train)
-        dev_acc = predict_and_eval(best_model, X_dev, y_dev)
-        test_acc = predict_and_eval(best_model, X_test, y_test)
+#         train_acc = predict_and_eval(best_model, X_train, y_train)
+#         dev_acc = predict_and_eval(best_model, X_dev, y_dev)
+#         test_acc = predict_and_eval(best_model, X_test, y_test)
 
-        print(
-            f"test_size={test_size} dev_size={dev_size} train_size={train_size} train_acc={train_acc} dev_acc={dev_acc} test_acc={test_acc}"
-        )
-        # print(f"Best Hyperparameters: {best_hparams}\n")
+#         print(
+#             f"test_size={test_size} dev_size={dev_size} train_size={train_size} train_acc={train_acc} dev_acc={dev_acc} test_acc={test_acc}"
+#         )
+#         # print(f"Best Hyperparameters: {best_hparams}\n")
 
 
-total_samples = len(X_train) + len(X_test) + len(X_dev)
-print(
-    f"The number of total samples in the dataset (train + test + dev): {total_samples}"
-)
-# print(X_train.shape)
-# Get the shape of the first image in the dataset
-first_image_shape = digits.images[0].shape
+# total_samples = len(X_train) + len(X_test) + len(X_dev)
+# print(
+#     f"The number of total samples in the dataset (train + test + dev): {total_samples}"
+# )
+# # print(X_train.shape)
+# # Get the shape of the first image in the dataset
+# first_image_shape = digits.images[0].shape
 
-# Extract height and width from the shape
-image_height, image_width = first_image_shape
-print(
-    f"Size (height and width) of the images in dataset: Height={image_height}, Width={image_width}"
-)
+# # Extract height and width from the shape
+# image_height, image_width = first_image_shape
+# print(
+#     f"Size (height and width) of the images in dataset: Height={image_height}, Width={image_width}"
+# )
