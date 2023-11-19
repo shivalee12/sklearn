@@ -1,14 +1,18 @@
 # test_app.py
-from app import app
+from app import app, input_data
 import pytest
+
+inp = input_data()
+print(inp)
 
 
 def test_post_predict():
     # Sample payload for testing
-    payload = {"data": "your_sample_data_for_predict_function"}
+    payload = {"data": inp}
 
     # Make a POST request to the predict endpoint
     response = app.test_client().post("/predict", json=payload)
+    print(response.get_data(as_text=True))
 
     # Assert the status code is 200
     assert response.status_code == 200
@@ -25,9 +29,4 @@ def test_post_predict():
     assert response.get_json()["prediction"] == 8
     assert response.get_json()["prediction"] == 9
 
-    # Assert the status code is 200 (again, redundant for clarity)
     assert response.status_code == 200
-
-
-# Run the tests using pytest
-# Open terminal in VS Code and run: pytest -v test_app.py

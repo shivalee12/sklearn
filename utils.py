@@ -37,7 +37,7 @@ def train_model(x, y, model_params, model_type="svm"):
     return model
 
 
-def predict_and_eval(model, X_test, y_test):
+def predict_and_eval(model, X_test):
     """
     Predicts labels for test data using the given model and evaluates its performance.
 
