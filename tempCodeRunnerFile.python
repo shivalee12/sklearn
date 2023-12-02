@@ -1,0 +1,18 @@
+import matplotlib.pyplot as plt
+
+# Data
+categories = ['CT Scanner (High-Income)', 'CT Scanner (Low-Income)', 'PET Scanner (High-Income)', 'PET Scanner (Low-Income)']
+people_served = [25000, 1.7e6, 300000, 167e6]
+
+# Create bar graph
+plt.bar(categories, people_served, color=['blue', 'orange', 'green', 'red'])
+plt.yscale('log')  # Use log scale for better visualization due to large differences
+
+# Labeling
+plt.xlabel('Scanner Type and Country Income')
+plt.ylabel('People Served (log scale)')
+plt.title('Disparity in Scanner Accessibility Between High-Income and Low-Income Countries')
+
+# Show the plot
+plt.show()
+plt.savefig("health")

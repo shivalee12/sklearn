@@ -1,15 +1,29 @@
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
-from sklearn import metrics, svm
-from sklearn.model_selection import train_test_split
-import pdb
-from sklearn.model_selection import GridSearchCV
+from sklearn import metrics, svm, tree
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
+from sklearn.preprocessing import Normalizer
+from joblib import dump, load
+from sklearn import datasets
+import numpy as np
+import os
 
 
 def preprocess_data(data):
     n_samples = len(data)
     data = data.reshape((n_samples, -1))
-    return data
+    normalizer = Normalizer(norm="l2")  # Using L2 norm for unit normalization
+    data_normalized = normalizer.fit_transform(data)
+    return data_normalized
+
+
+def read_digits():
+    digits = datasets.load_digits()
+    x = digits.images
+    y = digits.target
+    # get_info(x)
+    return x, y
 
 
 def split_data(x, y, test_size, dev_size, random_state=1):
@@ -31,13 +45,18 @@ def train_model(x, y, model_params, model_type="svm"):
     if model_type == "svm":
         clf = svm.SVC
 
+    if model_type == "DecisionTree":
+        clf = tree.DecisionTreeClassifier
+
+    if model_type == "LogisticRegression":
+        clf = LogisticRegression
+
     model = clf(**model_params)
-    # pdb.set_trace()
     model.fit(x, y)
     return model
 
 
-def predict_and_eval(model, X_test):
+def predict_and_eval(model, X_test, y_test):
     """
     Predicts labels for test data using the given model and evaluates its performance.
 
@@ -52,74 +71,91 @@ def predict_and_eval(model, X_test):
     # Predict the value of the digit on the test subset
     predicted = model.predict(X_test)
 
-    # # Visualize the first 4 test samples and show their predicted digit value
-    # _, axes = plt.subplots(nrows=1, ncols=4, figsize=(10, 3))
-    # for ax, image, prediction in zip(axes, X_test, predicted):
-    #     ax.set_axis_off()
-    #     image = image.reshape(8, 8)
-    #     ax.imshow(image, cmap=plt.cm.gray_r, interpolation="nearest")
-    #     ax.set_title(f"Prediction: {prediction}")
+    # Visualize the first 4 test samples and show their predicted digit value
+    _, axes = plt.subplots(nrows=1, ncols=4, figsize=(10, 3))
+    for ax, image, prediction in zip(axes, X_test, predicted):
+        ax.set_axis_off()
+        image = image.reshape(8, 8)
+        ax.imshow(image, cmap=plt.cm.gray_r, interpolation="nearest")
+        ax.set_title(f"Prediction: {prediction}")
 
-    # plt.savefig("predicted_digits.png")
-    # # Print the classification report
-    # print(
-    #     f"Classification report for classifier {model}:\n"
-    #     f"{metrics.classification_report(y_test, predicted)}\n"
-    # )
+    plt.savefig("predicted_digits.png")
+    # Print the classification report
+    print(
+        f"Classification report for classifier {model}:\n"
+        f"{metrics.classification_report(y_test, predicted)}\n"
+    )
 
-    # # Plot the confusion matrix
-    # disp = metrics.ConfusionMatrixDisplay.from_estimator(model, X_test, y_test)
-    # disp.figure_.suptitle("Confusion Matrix")
-    # print(f"Confusion matrix:\n{disp.confusion_matrix}")
+    # Plot the confusion matrix
+    disp = metrics.ConfusionMatrixDisplay.from_estimator(model, X_test, y_test)
+    disp.figure_.suptitle("Confusion Matrix")
+    print(f"Confusion matrix:\n{disp.confusion_matrix}")
 
     # If needed, rebuild classification report from confusion matrix
     # The ground truth and predicted lists
-    # y_true = []
-    # y_pred = []
-    # cm = disp.confusion_matrix
+    y_true = []
+    y_pred = []
+    cm = disp.confusion_matrix
 
-    # # For each cell in the confusion matrix, add the corresponding ground truths
-    # # and predictions to the lists
-    # for gt in range(len(cm)):
-    #     for pred in range(len(cm)):
-    #         y_true += [gt] * cm[gt][pred]
-    #         y_pred += [pred] * cm[gt][pred]
+    # For each cell in the confusion matrix, add the corresponding ground truths
+    # and predictions to the lists
+    for gt in range(len(cm)):
+        for pred in range(len(cm)):
+            y_true += [gt] * cm[gt][pred]
+            y_pred += [pred] * cm[gt][pred]
 
-    # print(
-    #     "Classification report rebuilt from confusion matrix:\n"
-    #     f"{metrics.classification_report(y_true, y_pred)}\n"
-    # )
-    return predicted  # metrics.accuracy_score(y_test, predicted)
+    print(
+        "Classification report rebuilt from confusion matrix:\n"
+        f"{metrics.classification_report(y_true, y_pred)}\n"
+    )
+    return  # predicted  # metrics.accuracy_score(y_test, predicted)
 
 
-def hyperparameter_tuning(X_train, y_train, X_dev, y_dev, gamma_ranges, C_ranges):
-    # Define a list of hyperparameter combinations
-    param_combinations = [
-        {"gamma": cur_gamma, "C": cur_C}
-        for cur_gamma in gamma_ranges
-        for cur_C in C_ranges
-    ]
-
-    best_acc_so_far = -1
+def hyperparameter_tuning(
+    X_train, y_train, X_dev, y_dev, list_of_all_param_combinations, model_type
+):
+    best_accuracy = 0
+    best_hparams = None
     best_model = None
-    optimal_gamma = None
-    optimal_C = None
+    for param_combination in list_of_all_param_combinations:
+        model = train_model(X_train, y_train, param_combination, model_type)
+        # Evaluate the model on the development data
+        accuracy = sum(y_dev == model.predict(X_dev)) / len(y_dev)
 
-    for params in param_combinations:
-        # Train model with the current hyperparameters
-        cur_model = train_model(X_train, y_train, params)
+        # Check if this set of hyperparameters gives a better accuracy
+        if accuracy > best_accuracy:
+            best_accuracy = accuracy
+            best_hparams = param_combination
+            best_model_path = "./models/{}".format(model_type) + ".joblib"
+            best_model = model
+            # save the best_model
+    dump(best_model, best_model_path)
 
-        # Get accuracy on the dev set
-        cur_accuracy = predict_and_eval(cur_model, X_dev, y_dev)
+    print("Model save at {}".format(best_model_path))
 
-        # Check if the current model performs better than the previous best
-        if cur_accuracy > best_acc_so_far:
-            # print("New best accuracy:", cur_accuracy)
-            best_acc_so_far = cur_accuracy
-            optimal_gamma = params["gamma"]
-            optimal_C = params["C"]
-            best_model = cur_model
+    return best_hparams, best_model_path, best_accuracy
 
-    print("Optimal parameters gamma:", optimal_gamma, "C:", optimal_C)
 
-    return best_model, optimal_gamma, optimal_C
+def train_and_save_models(X_train, y_train, roll_no):
+    solvers = ["liblinear", "newton-cg", "lbfgs", "sag", "saga"]
+    models_directory = "./models"
+
+    for solver in solvers:
+        model = LogisticRegression(solver=solver, max_iter=1000)
+        scores = cross_val_score(model, X_train, y_train, cv=5)
+        mean_score = np.mean(scores)
+        std_score = np.std(scores)
+
+        # Train the model on the entire training set
+        model.fit(X_train, y_train)
+
+        # Save the model
+        model_filename = f"{roll_no}_lr_{solver}.joblib"
+        model_path = os.path.join(models_directory, model_filename)
+        dump(model, model_path)
+
+        # Print the performance of the model
+        print(
+            f"Solver: {solver}, Mean Accuracy: {mean_score:.3f}, Std: {std_score:.3f}"
+        )
+        print(f"Model saved as {model_path}")

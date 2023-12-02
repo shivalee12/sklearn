@@ -1,101 +1,109 @@
-"""
-================================
-Recognizing hand-written digits
-================================
-
-This example shows how scikit-learn can be used to recognize images of
-hand-written digits, from 0-9.
-
-"""
-
-# Author: Gael Varoquaux <gael dot varoquaux at normalesup dot org>
-# License: BSD 3 clause
-
-# Standard scientific Python imports
 import matplotlib.pyplot as plt
+import pdb
+import itertools
+from utils import *
 
-# Import datasets, classifiers and performance metrics
-from sklearn import datasets, metrics, svm
-from sklearn.model_selection import train_test_split
-from utils import (
-    preprocess_data,
-    split_data,
-    train_model,
-    predict_and_eval,
-    hyperparameter_tuning,
-)
+classifier_param_dict = {}
+
+# SVM
+gamma_ranges = [0.001, 0.01, 0.1, 1, 10, 100]
+C_ranges = [0.1, 1, 2, 5, 10]
+h_param_svm = {"gamma": gamma_ranges, "C": C_ranges}
+h_param_svm_comb = [
+    {"gamma": gamma, "C": C} for gamma, C in itertools.product(gamma_ranges, C_ranges)
+]
+test_size_array = [0.2]
+dev_size_array = [0.2]
+# classifier_param_dict["svm"] = h_param_svm_comb
+
+# Decision Tree
+max_depth_list = [5, 10, 15, 20, 50, 100]
+h_param_tree = {}
+h_param_tree["max_depth"] = max_depth_list
+h_param_tree_comb = [{"max_depth": max_depth} for max_depth in max_depth_list]
+
+# classifier_param_dict["DecisionTree"] = h_param_tree_comb
+
+# LR
+solvers = ["liblinear", "newton-cg", "lbfgs", "sag", "saga"]
+h_param_lr = {}
+h_param_lr["solver"] = solvers
+h_param_lr_comb = [{"solver": sol} for sol in solvers]
+classifier_param_dict["LogisticRegression"] = h_param_lr_comb
 
 
-digits = datasets.load_digits()
+x, y = read_digits()
 
 _, axes = plt.subplots(nrows=1, ncols=4, figsize=(10, 3))
-for ax, image, label in zip(axes, digits.images, digits.target):
+for ax, image, label in zip(axes, x, y):
     ax.set_axis_off()
     ax.imshow(image, cmap=plt.cm.gray_r, interpolation="nearest")
     ax.set_title("Training: %i" % label)
-plt.savefig("digits.png")
-
-digits = datasets.load_digits()
 
 
-# Split data into train and test subsets
-X_train, X_test, X_dev, y_train, y_test, y_dev = split_data(
-    digits.data, digits.target, 0.3, 0.2
-)
-X_train = preprocess_data(X_train)
-X_test = preprocess_data(X_test)
+def run_exp():
+    for test_size in test_size_array:
+        for dev_size in dev_size_array:
+            X_train, X_test, X_dev, y_train, y_test, y_dev = split_data(
+                x, y, test_size=0.3, dev_size=0.1
+            )
 
-# Train the model
-model = train_model(X_train, y_train, {"gamma": 0.001}, model_type="svm")
+            X_train = preprocess_data(X_train)
+            X_test = preprocess_data(X_test)
+            X_dev = preprocess_data(X_dev)
 
-# Call the predict_and_eval function
-print(predict_and_eval(model, X_test, y_test))
+            for model_type in classifier_param_dict:
+                if model_type == "LogisticRegression":
+                    train_and_save_models(X_train, y_train, "B20ME071")
+                h_param = classifier_param_dict[model_type]
+                best_hparams, best_model_path, dev_accuracy = hyperparameter_tuning(
+                    X_train, y_train, X_dev, y_dev, h_param, model_type
+                )
+                # Loading best model
+                best_model = load(best_model_path)
 
-# Show the plots
-plt.show()
-plt.savefig("confusion_matrix.png")
+                train_acc = sum(y_train == best_model.predict(X_train)) / len(y_train)
+                test_acc = sum(y_test == best_model.predict(X_test)) / len(y_test)
+                # predict_and_eval(best_model, X_test, y_test)
+                print("Test Results for model type = ", model_type)
+                print(
+                    "test size = ",
+                    test_size,
+                    "dev size = ",
+                    dev_size,
+                    "train size = ",
+                    1 - (test_size + dev_size),
+                    "train_acc = ",
+                    train_acc,
+                    "test_acc = ",
+                    test_acc,
+                    "dev_acc = ",
+                    dev_accuracy,
+                )
+                run_results = {
+                    "model name": model_type,
+                    "test size": test_size,
+                    "dev size": dev_size,
+                    "train size": 1 - (test_size + dev_size),
+                    "train_acc": train_acc,
+                    "test_acc": test_acc,
+                    "dev_acc": dev_accuracy,
+                }
 
-# hyperparameter tuning
-
-# gamma_ranges = [0.001, 0.01, 0.1, 1, 10, 100]
-# C_ranges = [0.1, 1, 2, 5, 10]
-# test_sizes = [0.1, 0.2, 0.3]
-# dev_sizes = [0.1, 0.2, 0.3]
-
-# for test_size in test_sizes:
-#     for dev_size in dev_sizes:
-#         train_size = 1 - test_size - dev_size
-#         X_train, X_test, X_dev, y_train, y_test, y_dev = split_data(
-#             digits.data, digits.target, test_size, dev_size, random_state=1
-#         )
-#         # print("X_train shape:", X_train.shape)
-#         # print("y_train shape:", y_train.shape)
-#         # print("X_dev shape:", X_dev.shape)
-#         # print("y_dev shape:", y_dev.shape)
-#         best_model, optimal_gamma, optimal_C = hyperparameter_tuning(
-#             X_train, y_train, X_dev, y_dev, gamma_ranges, C_ranges
-#         )
-
-#         train_acc = predict_and_eval(best_model, X_train, y_train)
-#         dev_acc = predict_and_eval(best_model, X_dev, y_dev)
-#         test_acc = predict_and_eval(best_model, X_test, y_test)
-
-#         print(
-#             f"test_size={test_size} dev_size={dev_size} train_size={train_size} train_acc={train_acc} dev_acc={dev_acc} test_acc={test_acc}"
-#         )
-#         # print(f"Best Hyperparameters: {best_hparams}\n")
+    svm_model = load("models/svm.joblib")
+    tree_model = load("models/DecisionTree.joblib")
+    lr_model = load("models/LogisticRegression.joblib")
+    svm_pred = svm_model.predict(X_test)
+    tree_pred = tree_model.predict(X_test)
+    lr_pred = lr_model.predict(X_test)
+    confusion_matrix = metrics.confusion_matrix(svm_pred, tree_pred)
+    print("confusion matrix = \n", confusion_matrix)
+    cnf2 = [
+        [sum(svm_pred == y_test), sum(svm_pred != y_test)],
+        [sum(tree_pred == y_test), sum(tree_pred != y_test)],
+        [sum(lr_pred == y_test), sum(lr_pred != y_test)],
+    ]
+    print("confusion matrix 2 = ", cnf2)
 
 
-# total_samples = len(X_train) + len(X_test) + len(X_dev)
-# print(
-#     f"The number of total samples in the dataset (train + test + dev): {total_samples}"
-# )
-# # print(X_train.shape)
-# # Get the shape of the first image in the dataset
-# first_image_shape = digits.images[0].shape
-
-# # Extract height and width from the shape
-# image_height, image_width = first_image_shape
-# print(
-#     f"Size (height and width) of the images in dataset: Height={image_height}, Width={image_width}"
-# )
+run_exp()
