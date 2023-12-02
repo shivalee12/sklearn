@@ -24,7 +24,7 @@ jobs:
             #   run: pytest
             - name: Run Experiment
               run: python exp.py 
-            - name: Run test cases
-              run: python tests_on_exp.py
+            - name: Run pytest
+              run: pytest
             - name: New step
               run: echo "🚀 This is a new step in the workflow."
